@@ -1,10 +1,9 @@
 #include "COpenGL.h"
 #include <iostream>
 
-COpenGL::COpenGL()
-{
-
-}
+COpenGL::COpenGL(int frameT):
+    frame_time(frameT), current_frame(0), frame_count(frameT)
+{}
 
 bool COpenGL::init(int windowW, int windowH)
 {
@@ -29,12 +28,25 @@ bool COpenGL::init(int windowW, int windowH)
     return true;
 }
 
-void COpenGL::run(const CMatrix& matrix)
+void COpenGL::run(CMatrix& matrix)
 {
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
+        if (frame_count == frame_time)
+        {
+            // ERASE
+            if (current_frame == 7)
+            {
+                matrix.beginDFS(CMatrix::Node(2, 4), CMatrix::Node(20, 10));
+            }
+            // END ERASE
+            frame_count = 0;
+            current_frame++;
+            matrix.update();
+        }
         draw(matrix);
+        frame_count++;
     }
     glfwTerminate();
 }
@@ -45,12 +57,16 @@ void COpenGL::draw(const CMatrix& matrix)
     float sepX = 2.0f / (float)(matrix.width + 1);
     float sepY = 2.0f / (float)(matrix.height + 1);
 
+    float cR = (matrix.state == 4) * 1;
+    float cG = (matrix.state == 3) * 1;
+    float cB = (matrix.state == 1) * 1;
+
     /* Render here */
     glClear(GL_COLOR_BUFFER_BIT);
 
     /* DRAW GRID */
     glBegin(GL_LINES);
-        //glColor3f(1, 1, 1);
+        //glColor3f(1.0f /(rand() % 10), 1.0f / (rand() % 10), 1.0f / (rand() % 10));
         for (int x = 0; x < matrix.width; x++)
         {
             for (int y = 0; y < matrix.height; y++)
@@ -58,13 +74,12 @@ void COpenGL::draw(const CMatrix& matrix)
                 if (matrix.getNode(x, y))
                 {
                     //glColor3f((1.0f * (float)x)/(float)(matrix.width), (1.0f * (float)y) / (float)(matrix.height), 1);
-                    bool checkS[8];
-                    matrix.checkSiblings(x, y, checkS);
-                    int siblingsX[8] = { x - 1, x, x + 1, x - 1, x + 1, x - 1, x, x + 1 };
-                    int siblingsY[8] = { y - 1, y - 1, y - 1, y, y, y + 1, y + 1, y + 1 };
-                    for (int i = 0; i < 8; i++)
+                    int checkS = matrix.checkSomeSiblings(x, y);
+                    int siblingsX[4] = { x + 1, x, x + 1, x + 1 };
+                    int siblingsY[4] = { y, y + 1, y + 1, y - 1 };
+                    for (int i = 0; i < 4; i++, checkS = checkS >> 1)
                     {
-                        if (checkS[i])
+                        if (checkS & 0x1)
                         {
                             glVertex2f(sepX * (x + 1) - 1, sepY * (y + 1) - 1);
                             glVertex2f(sepX * (siblingsX[i] + 1) - 1, sepY * (siblingsY[i] + 1) - 1);
@@ -75,8 +90,17 @@ void COpenGL::draw(const CMatrix& matrix)
         }
     glEnd();
 
+    if (matrix.DFS_path.size() > 1)
+    {
+        glBegin(GL_LINE_STRIP);
+            glColor3f(cR, cG, cB);
+            for (int i = 0; i < matrix.DFS_path.size(); i++)
+                glVertex2f(sepX * (matrix.DFS_path[i].x + 1) - 1, sepY * (matrix.DFS_path[i].y + 1) - 1);
+        glEnd();
+    }
+
     glBegin(GL_QUADS);
-        //glColor3f(255.0f / 255.0f, 219.0f / 255.0f, 88.0f / 255.0f);
+        glColor3f(1, 1, 1);
         for (int x = 0; x < matrix.width; x++)
         {
             for (int y = 0; y < matrix.height; y++)
@@ -85,10 +109,15 @@ void COpenGL::draw(const CMatrix& matrix)
                 {
                     float coorX = sepX * (x + 1) - 1;
                     float coorY = sepY * (y + 1) - 1;
+                    if (std::find(matrix.DFS_path.begin(), matrix.DFS_path.end(), CMatrix::Node(x, y)) != matrix.DFS_path.end())
+                        glColor3f(cR, cG, cB);
+                    if (matrix.state == 1 && CMatrix::Node(x, y) == matrix.target)
+                        glColor3f(0, 1, 0);
                     glVertex2f(coorX - sepX / 10.0f, coorY);
                     glVertex2f(coorX, coorY - sepY / 10.0f);
                     glVertex2f(coorX + sepX / 10.0f, coorY);
                     glVertex2f(coorX, coorY + sepY / 10.0f);
+                    glColor3f(1, 1, 1);
                 }
             }
         }

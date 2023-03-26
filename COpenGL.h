@@ -1,16 +1,20 @@
 #pragma once
 #include <GLFW/glfw3.h>
+#include <algorithm>
 #include "CMatrix.h"
 
 class COpenGL
 {
 	GLFWwindow* window;
+	int frame_time;
+	int frame_count;
+	int current_frame;
 
 	void draw(const CMatrix& matrix);
 
 public:
-	COpenGL();
+	COpenGL(int frameT = 0x0000000E);
 	bool init(int windowW, int windowH);
 
-	void run(const CMatrix& matrix);
+	void run(CMatrix& matrix);
 };
