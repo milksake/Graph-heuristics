@@ -3,7 +3,7 @@
 
 int main(void)
 {
-    COpenGL openGL(2);
+    COpenGL openGL;
     CMatrix matrix(30, 20);
 
     if (!openGL.init(1200, 670))

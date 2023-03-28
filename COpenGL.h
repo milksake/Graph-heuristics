@@ -13,7 +13,7 @@ class COpenGL
 	void draw(const CMatrix& matrix);
 
 public:
-	COpenGL(int frameT = 0x0000000E);
+	COpenGL(int frameT = 0xE);
 	bool init(int windowW, int windowH);
 
 	void run(CMatrix& matrix);

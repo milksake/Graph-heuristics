@@ -38,7 +38,7 @@ void COpenGL::run(CMatrix& matrix)
             // ERASE
             if (current_frame == 7)
             {
-                matrix.beginDFS(CMatrix::Node(2, 4), CMatrix::Node(20, 10));
+                matrix.beginBFS(CMatrix::Node(2, 4), CMatrix::Node(20, 10));
             }
             // END ERASE
             frame_count = 0;
@@ -59,7 +59,7 @@ void COpenGL::draw(const CMatrix& matrix)
 
     float cR = (matrix.state == 4) * 1;
     float cG = (matrix.state == 3) * 1;
-    float cB = (matrix.state == 1) * 1;
+    float cB = (matrix.state == 1) + (matrix.state == 2);
 
     /* Render here */
     glClear(GL_COLOR_BUFFER_BIT);
@@ -90,12 +90,29 @@ void COpenGL::draw(const CMatrix& matrix)
         }
     glEnd();
 
+    if (matrix.BFS_evaluated.size() > 1)
+    {
+        glBegin(GL_LINES);
+            for (int i = 0; i < matrix.BFS_evaluated.size(); i++)
+            {
+                if (matrix.BFS_evaluated[i].state != -1)
+                {
+                    int x, y;
+                    matrix.getCoord(matrix.BFS_evaluated[i].state, x, y);
+                    glColor3f(cR, 0, !cR);
+                    glVertex2f(sepX * (x + 1) - 1, sepY * (y + 1) - 1);
+                    glVertex2f(sepX * (matrix.BFS_evaluated[i].x + 1) - 1, sepY * (matrix.BFS_evaluated[i].y + 1) - 1);
+                }
+            }
+        glEnd();
+    }
+
     if (matrix.DFS_path.size() > 1)
     {
         glBegin(GL_LINE_STRIP);
-            glColor3f(cR, cG, cB);
-            for (int i = 0; i < matrix.DFS_path.size(); i++)
-                glVertex2f(sepX * (matrix.DFS_path[i].x + 1) - 1, sepY * (matrix.DFS_path[i].y + 1) - 1);
+        glColor3f(cR, cG, cB);
+        for (int i = 0; i < matrix.DFS_path.size(); i++)
+            glVertex2f(sepX * (matrix.DFS_path[i].x + 1) - 1, sepY * (matrix.DFS_path[i].y + 1) - 1);
         glEnd();
     }
 
@@ -109,10 +126,12 @@ void COpenGL::draw(const CMatrix& matrix)
                 {
                     float coorX = sepX * (x + 1) - 1;
                     float coorY = sepY * (y + 1) - 1;
+                    if (std::find(matrix.BFS_evaluated.begin(), matrix.BFS_evaluated.end(), CMatrix::Node(x, y)) != matrix.BFS_evaluated.end())
+                        glColor3f(cR, 0, !cR);
                     if (std::find(matrix.DFS_path.begin(), matrix.DFS_path.end(), CMatrix::Node(x, y)) != matrix.DFS_path.end())
                         glColor3f(cR, cG, cB);
-                    if (matrix.state == 1 && CMatrix::Node(x, y) == matrix.target)
-                        glColor3f(0, 1, 0);
+                    if (CMatrix::Node(x, y) == matrix.target)
+                        glColor3f(cR, cB || cG, 0);
                     glVertex2f(coorX - sepX / 10.0f, coorY);
                     glVertex2f(coorX, coorY - sepY / 10.0f);
                     glVertex2f(coorX + sepX / 10.0f, coorY);
