@@ -5,7 +5,6 @@
 
 class COpenGL
 {
-	GLFWwindow* window;
 	int frame_time;
 	int frame_count;
 	int current_frame;
@@ -13,6 +12,8 @@ class COpenGL
 	void draw(const CMatrix& matrix);
 
 public:
+	GLFWwindow* window;
+
 	COpenGL(int frameT = 0xE);
 	bool init(int windowW, int windowH);
 

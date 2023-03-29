@@ -1,5 +1,6 @@
 #include "COpenGL.h"
 #include <iostream>
+#include "CInput.h"
 
 COpenGL::COpenGL(int frameT):
     frame_time(frameT), current_frame(0), frame_count(frameT)
@@ -33,14 +34,11 @@ void COpenGL::run(CMatrix& matrix)
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
+        /* User input */
+        if (matrix.state != 1 && matrix.state != 2)
+            CInput::update(this, &matrix);
         if (frame_count == frame_time)
         {
-            // ERASE
-            if (current_frame == 7)
-            {
-                matrix.beginBFS(CMatrix::Node(2, 4), CMatrix::Node(20, 10));
-            }
-            // END ERASE
             frame_count = 0;
             current_frame++;
             matrix.update();
@@ -126,6 +124,8 @@ void COpenGL::draw(const CMatrix& matrix)
                 {
                     float coorX = sepX * (x + 1) - 1;
                     float coorY = sepY * (y + 1) - 1;
+                    if (std::find(matrix.selected_nodes.begin(), matrix.selected_nodes.end(), CMatrix::Node(x, y)) != matrix.selected_nodes.end())
+                        glColor3f(1, 0, 1);
                     if (std::find(matrix.BFS_evaluated.begin(), matrix.BFS_evaluated.end(), CMatrix::Node(x, y)) != matrix.BFS_evaluated.end())
                         glColor3f(cR, 0, !cR);
                     if (std::find(matrix.DFS_path.begin(), matrix.DFS_path.end(), CMatrix::Node(x, y)) != matrix.DFS_path.end())

@@ -18,12 +18,14 @@ public:
 		bool operator== (Node rhs) const { return x == rhs.x && y == rhs.y; }
 	};
 
-	int state; // 0 - nothing, 1 - DFS, 2 - BFS, 3 - success, 4 - failure
 	std::vector<Node> DFS_path;
 	std::vector<Node> DFS_evaluated;
 	std::deque<Node> BFS_queue;
 	std::vector<Node> BFS_evaluated;
+	std::vector<Node> selected_nodes;
 	Node target;
+
+	int state; // 0 - nothing, 1 - DFS, 2 - BFS, 3 - success, 4 - failure
 	int width;
 	int height;
 
@@ -38,6 +40,7 @@ public:
 	int checkSiblings(Node n) const;
 	int checkSomeSiblings(int x, int y) const;
 	bool checkNode(int x, int y) const;
+	void resize(int percent);
 
 	void update();
 	void beginDFS(const Node& a, const Node& b);
@@ -45,6 +48,7 @@ public:
 	void beginBFS(const Node& a, const Node& b);
 	void endBFS(bool s);
 	
+private:
 	void DFS();
 	void BFS();
 };
