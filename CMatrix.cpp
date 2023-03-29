@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <time.h>
 #include <iostream>
+#include "CInput.h"
 
 CMatrix::CMatrix(int width, int height):
     width(width), height(height), state(0)
@@ -76,6 +77,11 @@ void CMatrix::getCoord(int index, int& x, int& y) const
 bool CMatrix::checkNode(int x, int y) const
 {
     return (0 <= x) && (x < width) && (0 <= y) && (y < height) && (getNode(x, y));
+}
+
+bool CMatrix::checkNode(Node n) const
+{
+    return checkNode(n.x, n.y);
 }
 
 void CMatrix::update()
@@ -196,12 +202,19 @@ void CMatrix::endDFS(bool s)
 
 void CMatrix::resize(int percent)
 {
+    /* Fix bugs */
+    DFS_path.clear();
+    DFS_evaluated.clear();
+    BFS_queue.clear();
+    BFS_evaluated.clear();
+    selected_nodes.clear();
+    state = 0;
     /* Modify matrix */
     for (int i = 0; i < width * height; i++)
     {
         matrix[i] = true;
     }
-    for (int numNodes = width * height * percent / 100; numNodes > 0; numNodes--)
+    for (int numNodes = width * height * (100 - percent) / 100; numNodes > 0; numNodes--)
     {
         matrix[rand() % (width * height)] = false;
     }

@@ -40,6 +40,7 @@ public:
 	int checkSiblings(Node n) const;
 	int checkSomeSiblings(int x, int y) const;
 	bool checkNode(int x, int y) const;
+	bool checkNode(Node n) const;
 	void resize(int percent);
 
 	void update();

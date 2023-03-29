@@ -6,6 +6,11 @@ class CMatrix;
 class CInput
 {
 public:
-	static void update(COpenGL* context, CMatrix* matrix);
+	COpenGL* context = nullptr;
+	CMatrix* matrix = nullptr;
+
+	//CInput();
+
+	void update(COpenGL* context, CMatrix* matrix);
 
 };
