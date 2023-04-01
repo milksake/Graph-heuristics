@@ -1,31 +1,26 @@
 #pragma once
 #include <vector>
-#include <deque>
-#include <array>
+#include <iostream>
+
+class CSearch;
 
 class CMatrix
 {
 	bool* matrix;
 	
 public:
+	CSearch* search = nullptr;
+
 	struct Node {
 		int x, y, state;
 		Node(): x(0), y(0), state(0) {}
 		Node(int index, const CMatrix& matrix) : state(0) { matrix.getCoord(index, x, y); }
 		Node(int x, int y): x(x), y(y), state(0) {}
 		Node(int x, int y, int state) : x(x), y(y), state(state) {}
-		Node(Node n, int state) : x(n.x), y(n.y), state(state) {}
-		bool operator== (Node rhs) const { return x == rhs.x && y == rhs.y; }
+		Node(const Node& n, int state) : x(n.x), y(n.y), state(state) {}
+		bool operator== (const Node& rhs) const { return x == rhs.x && y == rhs.y; }
 	};
 
-	std::vector<Node> DFS_path;
-	std::vector<Node> DFS_evaluated;
-	std::deque<Node> BFS_queue;
-	std::vector<Node> BFS_evaluated;
-	std::vector<Node> selected_nodes;
-	Node target;
-
-	int state; // 0 - nothing, 1 - DFS, 2 - BFS, 3 - success, 4 - failure
 	int width;
 	int height;
 
@@ -41,15 +36,21 @@ public:
 	int checkSomeSiblings(int x, int y) const;
 	bool checkNode(int x, int y) const;
 	bool checkNode(Node n) const;
+	bool checkRange(Node lim1, Node lim2, Node value) const;
 	void resize(int percent);
+	void eraseRange(Node a, Node b);
+
+	std::vector<Node> selected_nodes;
+	Node obstacle;
 
 	void update();
-	void beginDFS(const Node& a, const Node& b);
-	void endDFS(bool s);
-	void beginBFS(const Node& a, const Node& b);
-	void endBFS(bool s);
-	
-private:
-	void DFS();
-	void BFS();
+
+	template <typename T>
+	void beginSearch(const Node& a, const Node& b)
+	{
+		selected_nodes.clear();
+		if (search)
+			delete search;
+		search = new T(a, b, this);
+	}
 };

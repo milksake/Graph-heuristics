@@ -3,9 +3,10 @@
 #include <time.h>
 #include <iostream>
 #include "CInput.h"
+#include "CSearch.h"
 
 CMatrix::CMatrix(int width, int height):
-    width(width), height(height), state(0)
+    width(width), height(height), obstacle(-1, -1, -1)
 {
     init();
 }
@@ -84,131 +85,26 @@ bool CMatrix::checkNode(Node n) const
     return checkNode(n.x, n.y);
 }
 
+bool CMatrix::checkRange(Node lim1, Node lim2, Node value) const
+{
+    return std::min(lim1.x, lim2.x) <= value.x
+        && value.x <= std::max(lim1.x, lim2.x)
+        && std::min(lim1.y, lim2.y) <= value.y
+        && value.y <= std::max(lim1.y, lim2.y);
+}
+
 void CMatrix::update()
 {
-    switch (state)
-    {
-    case 1:
-        DFS();
-        break;
-    case 2:
-        BFS();
-        break;
-    default:
-        break;
-    }
-}
-
-void CMatrix::beginDFS(const Node& a, const Node& b)
-{
-    target = b;
-    state = 1;
-    selected_nodes.clear();
-    DFS_path.clear();
-    DFS_evaluated.clear();
-    BFS_queue.clear();
-    BFS_evaluated.clear();
-    DFS_path.push_back(a);
-}
-
-void CMatrix::beginBFS(const Node& a, const Node& b)
-{
-    target = b;
-    state = 2;
-    selected_nodes.clear();
-    DFS_path.clear();
-    DFS_evaluated.clear();
-    BFS_queue.clear();
-    BFS_evaluated.clear();
-    BFS_queue.push_back(Node(a, -1));
-}
-
-void CMatrix::DFS()
-{
-    Node& endNode = *(DFS_path.end() - 1);
-    int siblings = checkSiblings(endNode);
-    Node coor[8] = {
-        Node(endNode.x - 1, endNode.y - 1),
-        Node(endNode.x,     endNode.y - 1),
-        Node(endNode.x + 1, endNode.y - 1),
-        Node(endNode.x - 1, endNode.y),
-        Node(endNode.x + 1, endNode.y),
-        Node(endNode.x - 1, endNode.y + 1),
-        Node(endNode.x,     endNode.y + 1),
-        Node(endNode.x + 1, endNode.y + 1),
-    };
-    int i = endNode.state;
-    siblings = siblings >> i;
-    for (; (!(siblings & 0x1) || (std::find(DFS_path.begin(), DFS_path.end(), coor[i]) != DFS_path.end()) || (std::find(DFS_evaluated.begin(), DFS_evaluated.end(), coor[i]) != DFS_evaluated.end())) && siblings; siblings = siblings >> 1, i++);
-    if (siblings)
-    {
-        if (coor[i] == target)
-            endDFS(true);
-        endNode.state = i;
-        DFS_path.push_back(coor[i]);
-        DFS_evaluated.push_back(coor[i]);
-    }
-    else
-    {
-        Node tmpNode = DFS_path.back();
-        DFS_path.pop_back();
-        if (DFS_path.empty())
-        {
-            DFS_path.push_back(tmpNode);
-            endDFS(false);
-        }
-        else
-            (DFS_path.end() - 1)->state++;
-    }
-}
-
-void CMatrix::BFS()
-{
-    Node& frontNode = *(BFS_queue.end() - 1);
-    BFS_evaluated.push_back(frontNode);
-    if (frontNode == target)
-    {
-        endBFS(true);
-        return;
-    }
-    int siblings = checkSiblings(frontNode);
-    Node coor[8] = {
-        Node(frontNode.x - 1, frontNode.y - 1),
-        Node(frontNode.x,     frontNode.y - 1),
-        Node(frontNode.x + 1, frontNode.y - 1),
-        Node(frontNode.x - 1, frontNode.y),
-        Node(frontNode.x + 1, frontNode.y),
-        Node(frontNode.x - 1, frontNode.y + 1),
-        Node(frontNode.x,     frontNode.y + 1),
-        Node(frontNode.x + 1, frontNode.y + 1),
-    };
-    for (int i = 0; siblings; siblings = siblings >> 1, i++)
-    {
-        if ((siblings & 0x1) && (std::find(BFS_queue.begin(), BFS_queue.end(), coor[i]) == BFS_queue.end()) && (std::find(BFS_evaluated.begin(), BFS_evaluated.end(), coor[i]) == BFS_evaluated.end()))
-        {
-            BFS_queue.push_front(Node(coor[i], frontNode.y * width + frontNode.x));
-        }
-    }
-    //std::cout << "Processed: " << frontNode.x << ' ' << frontNode.y << '\n';
-    BFS_queue.pop_back();
-    if (BFS_queue.empty())
-        endBFS(false);
-}
-
-void CMatrix::endDFS(bool s)
-{
-    state = 4 - s;
+    if (search)
+        search->update();
 }
 
 void CMatrix::resize(int percent)
 {
     /* Fix bugs */
-    DFS_path.clear();
-    DFS_evaluated.clear();
-    BFS_queue.clear();
-    BFS_evaluated.clear();
+    delete search;
+    search = nullptr;
     selected_nodes.clear();
-    state = 0;
     /* Modify matrix */
     for (int i = 0; i < width * height; i++)
     {
@@ -219,14 +115,29 @@ void CMatrix::resize(int percent)
         matrix[rand() % (width * height)] = false;
     }
 }
-
-void CMatrix::endBFS(bool s)
+void CMatrix::eraseRange(Node a, Node b)
 {
-    state = 4 - s;
-    if (s)
-    {    
-        auto it = std::find(BFS_evaluated.begin(), BFS_evaluated.end(), target);
-        for (; it != BFS_evaluated.end(); it = std::find(BFS_evaluated.begin(), BFS_evaluated.end(), Node((*it).state, *this)))
-            DFS_path.push_back((*it));
+    /* Fix bugs */
+    delete search;
+    search = nullptr;
+    selected_nodes.clear();
+    /* Modify matrix */
+    for (int x = 0; x < width; x++)
+    {
+        for (int y = 0; y < height; y++)
+        {
+            if (checkRange(a, b, CMatrix::Node(x, y)))
+                setNode(x, y, false);
+        }
     }
 }
+/*
+template<typename T>
+void CMatrix::beginSearch(const Node& a, const Node& b)
+{
+    selected_nodes.clear();
+    if (search)
+        delete search;
+    search = new T(a, b, this);
+}
+*/

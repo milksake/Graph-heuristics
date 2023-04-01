@@ -1,4 +1,5 @@
 #include "COpenGL.h"
+#include "CSearch.h"
 #include <iostream>
 
 COpenGL::COpenGL(int frameT):
@@ -41,11 +42,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 
     if (key == GLFW_KEY_B && action == GLFW_PRESS && matrix_ptr->selected_nodes.size() == 2)
     {
-        matrix_ptr->beginBFS(matrix_ptr->selected_nodes[0], matrix_ptr->selected_nodes[1]);
+        matrix_ptr->beginSearch<CSearchBFS>(matrix_ptr->selected_nodes[0], matrix_ptr->selected_nodes[1]);
     }
     if (key == GLFW_KEY_D && action == GLFW_PRESS && matrix_ptr->selected_nodes.size() == 2)
     {
-        matrix_ptr->beginDFS(matrix_ptr->selected_nodes[0], matrix_ptr->selected_nodes[1]);
+        matrix_ptr->beginSearch<CSearchDFS>(matrix_ptr->selected_nodes[0], matrix_ptr->selected_nodes[1]);
     }
     if (GLFW_KEY_0 <= key && key <= GLFW_KEY_9 && action == GLFW_PRESS)
     {
@@ -73,6 +74,26 @@ void mouseCallback(GLFWwindow* window, int button, int action, int mods)
             matrix_ptr->selected_nodes.push_back(node);
         }
     }
+
+    if (button == GLFW_MOUSE_BUTTON_RIGHT)
+    {
+        double x, y;
+        glfwGetCursorPos(window, &x, &y);
+        context_ptr->convertToGLCoor(x, y);
+        if (action == GLFW_PRESS)
+        {
+            matrix_ptr->obstacle = context_ptr->getNodePosition(x, y);
+        }
+        if (action == GLFW_RELEASE && matrix_ptr->obstacle.state != -1)
+        {
+            double x, y;
+            glfwGetCursorPos(window, &x, &y);
+            context_ptr->convertToGLCoor(x, y);
+            matrix_ptr->eraseRange(context_ptr->getNodePosition(x, y), matrix_ptr->obstacle);
+
+            matrix_ptr->obstacle.state = -1;
+        }
+    }
 }
 
 void COpenGL::run(CMatrix& matrix)
@@ -87,12 +108,6 @@ void COpenGL::run(CMatrix& matrix)
     {
         if (frame_count == frame_time)
         {
-            // ERASE
-            if (current_frame == 7)
-            {
-                //matrix.beginBFS(CMatrix::Node(2, 4), CMatrix::Node(20, 10));
-            }
-            // END ERASE
             frame_count = 0;
             current_frame++;
             matrix.update();
@@ -110,23 +125,17 @@ void COpenGL::draw(const CMatrix& matrix)
     float sepX = 2.0f / (float)(matrix.width + 1);
     float sepY = 2.0f / (float)(matrix.height + 1);
 
-    float cR = (matrix.state == 4) * 1;
-    float cG = (matrix.state == 3) * 1;
-    float cB = (matrix.state == 1) + (matrix.state == 2);
-
     /* Render here */
     glClear(GL_COLOR_BUFFER_BIT);
 
     /* DRAW GRID */
     glBegin(GL_LINES);
-        //glColor3f(1.0f /(rand() % 10), 1.0f / (rand() % 10), 1.0f / (rand() % 10));
         for (int x = 0; x < matrix.width; x++)
         {
             for (int y = 0; y < matrix.height; y++)
             {
                 if (matrix.getNode(x, y))
                 {
-                    //glColor3f((1.0f * (float)x)/(float)(matrix.width), (1.0f * (float)y) / (float)(matrix.height), 1);
                     int checkS = matrix.checkSomeSiblings(x, y);
                     int siblingsX[4] = { x + 1, x, x + 1, x + 1 };
                     int siblingsY[4] = { y, y + 1, y + 1, y - 1 };
@@ -143,34 +152,39 @@ void COpenGL::draw(const CMatrix& matrix)
         }
     glEnd();
 
-    if (matrix.BFS_evaluated.size() > 1)
+    if (matrix.search && matrix.search->nDisplay().size() > 1)
     {
         glBegin(GL_LINES);
-            for (int i = 0; i < matrix.BFS_evaluated.size(); i++)
+            bool c = matrix.search->state == 2;
+            glColor3f(c, 0, !c);
+            for (int i = 0; i < matrix.search->nDisplay().size(); i++)
             {
-                if (matrix.BFS_evaluated[i].state != -1)
+                if (matrix.search->nDisplay()[i].state != -1)
                 {
                     int x, y;
-                    matrix.getCoord(matrix.BFS_evaluated[i].state, x, y);
-                    glColor3f(cR, 0, !cR);
+                    matrix.getCoord(matrix.search->nDisplay()[i].state, x, y);
                     glVertex2f(sepX * (x + 1) - 1, sepY * (y + 1) - 1);
-                    glVertex2f(sepX * (matrix.BFS_evaluated[i].x + 1) - 1, sepY * (matrix.BFS_evaluated[i].y + 1) - 1);
+                    glVertex2f(sepX * (matrix.search->nDisplay()[i].x + 1) - 1, sepY * (matrix.search->nDisplay()[i].y + 1) - 1);
                 }
             }
         glEnd();
     }
 
-    if (matrix.DFS_path.size() > 1)
+    if (matrix.search && matrix.search->nFound().size() > 1)
     {
         glBegin(GL_LINE_STRIP);
-        glColor3f(cR, cG, cB);
-        for (int i = 0; i < matrix.DFS_path.size(); i++)
-            glVertex2f(sepX * (matrix.DFS_path[i].x + 1) - 1, sepY * (matrix.DFS_path[i].y + 1) - 1);
+            glColor3f(matrix.search->state == 2 ? 1 : 0, matrix.search->state == 1 ? 1 : 0, !matrix.search->state);
+            for (int i = 0; i < matrix.search->nFound().size(); i++)
+                glVertex2f(sepX * (matrix.search->nFound()[i].x + 1) - 1, sepY * (matrix.search->nFound()[i].y + 1) - 1);
         glEnd();
     }
 
     glBegin(GL_QUADS);
         glColor3f(1, 1, 1);
+        double x_o, y_o;
+        glfwGetCursorPos(window, &x_o, &y_o);
+        convertToGLCoor(x_o, y_o);
+        auto lim = getNodePosition(x_o, y_o);
         for (int x = 0; x < matrix.width; x++)
         {
             for (int y = 0; y < matrix.height; y++)
@@ -179,12 +193,17 @@ void COpenGL::draw(const CMatrix& matrix)
                 {
                     float coorX = sepX * (x + 1) - 1;
                     float coorY = sepY * (y + 1) - 1;
-                    if (std::find(matrix.BFS_evaluated.begin(), matrix.BFS_evaluated.end(), CMatrix::Node(x, y)) != matrix.BFS_evaluated.end())
-                        glColor3f(cR, 0, !cR);
-                    if (std::find(matrix.DFS_path.begin(), matrix.DFS_path.end(), CMatrix::Node(x, y)) != matrix.DFS_path.end())
-                        glColor3f(cR, cG, cB);
-                    if (CMatrix::Node(x, y) == matrix.target)
-                        glColor3f(cR, cB || cG, 0);
+                    if (matrix.search)
+                    {
+                        if (std::find(matrix.search->nDisplay().begin(), matrix.search->nDisplay().end(), CMatrix::Node(x, y)) != matrix.search->nDisplay().end())
+                            glColor3f(matrix.search->state == 2, 0, matrix.search->state != 2);
+                        if (std::find(matrix.search->nFound().begin(), matrix.search->nFound().end(), CMatrix::Node(x, y)) != matrix.search->nFound().end())
+                            glColor3f(matrix.search->state == 2 ? 1 : 0, matrix.search->state == 1 ? 1 : 0, !matrix.search->state);
+                        if (CMatrix::Node(x, y) == matrix.search->target)
+                            glColor3f(0, 1, 0);
+                    }
+                    if (matrix.obstacle.state != -1 && matrix.checkRange(matrix.obstacle, lim, CMatrix::Node(x, y)))
+                        glColor3f(0, 0, 0);
                     if (std::find(matrix.selected_nodes.begin(), matrix.selected_nodes.end(), CMatrix::Node(x, y)) != matrix.selected_nodes.end())
                         glColor3f(1, 0, 1);
                     glVertex2f(coorX - sepX / 10.0f, coorY);

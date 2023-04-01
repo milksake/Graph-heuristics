@@ -11,6 +11,4 @@ public:
 
 	//CInput();
 
-	void update(COpenGL* context, CMatrix* matrix);
-
 };
