@@ -49,6 +49,10 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     {
         matrix_ptr->beginSearch<CSearchDFS>(matrix_ptr->selected_nodes[0], matrix_ptr->selected_nodes[1]);
     }
+    if (key == GLFW_KEY_F && action == GLFW_PRESS && matrix_ptr->selected_nodes.size() == 2)
+    {
+        matrix_ptr->beginSearch<CSearchBestFirstS>(matrix_ptr->selected_nodes[0], matrix_ptr->selected_nodes[1]);
+    }
     if (GLFW_KEY_0 <= key && key <= GLFW_KEY_9 && action == GLFW_PRESS)
     {
         int value = (key - GLFW_KEY_0) * 10;

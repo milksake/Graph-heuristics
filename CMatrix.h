@@ -19,6 +19,7 @@ public:
 		Node(int x, int y, int state) : x(x), y(y), state(state) {}
 		Node(const Node& n, int state) : x(n.x), y(n.y), state(state) {}
 		bool operator== (const Node& rhs) const { return x == rhs.x && y == rhs.y; }
+		Node operator-(const Node& rhs) const { return Node(x - rhs.x, y - rhs.y); }
 	};
 
 	int width;
@@ -39,6 +40,7 @@ public:
 	bool checkRange(Node lim1, Node lim2, Node value) const;
 	void resize(int percent);
 	void eraseRange(Node a, Node b);
+	float eucliDistance(Node a, Node b);
 
 	std::vector<Node> selected_nodes;
 
