@@ -193,7 +193,7 @@ void CSearchBestFirstS::update()
     };
     for (int i = 0; siblings; siblings = siblings >> 1, i++)
     {
-        if ((siblings & 0x1) && (!searchMap(coor[i])) && (std::find(closed.begin(), closed.end(), coor[i]) == closed.end()))
+        if ((siblings & 0x1) && (!searchMap(coor[i])) && (std::find(closed.begin(), closed.end(), coor[i]) == closed.end()))    
         {
             auto n = CMatrix::Node(coor[i], frontNodeIt->second.y * matrix->width + frontNodeIt->second.x);
             open.emplace(heuristic(n), n);
@@ -211,6 +211,92 @@ void CSearchBestFirstS::begin(const CMatrix::Node& a, const CMatrix::Node& b)
 }
 
 void CSearchBestFirstS::end(bool s)
+{
+    if (s)
+    {
+        auto it = std::find(closed.begin(), closed.end(), target);
+        for (; it != closed.end(); it = std::find(closed.begin(), closed.end(), CMatrix::Node((*it).state, *matrix)))
+            path.push_back((*it));
+    }
+    state = 2 - s;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+float CSearchAStar::heuristic(CMatrix::Node x)
+{
+    return matrix->eucliDistance(x, target);
+}
+
+bool CSearchAStar::searchMap(CMatrix::Node n)
+{
+    for (auto it = open.begin(); it != open.end(); ++it)
+        if (it->second == n)
+            return true;
+    return false;
+}
+
+CSearchAStar::CSearchAStar(const CMatrix::Node& a, const CMatrix::Node b, CMatrix* matrix) :
+    CSearch(matrix)
+{
+    begin(a, b);
+}
+
+std::vector<CMatrix::Node>& CSearchAStar::nFound()
+{
+    return path;
+}
+
+std::vector<CMatrix::Node>& CSearchAStar::nDisplay()
+{
+    return closed;
+}
+
+void CSearchAStar::update()
+{
+    if (state != 0)
+        return;
+    auto frontNodeIt = open.begin();
+    closed.push_back(frontNodeIt->second);
+    if (frontNodeIt->second == target)
+    {
+        end(true);
+        return;
+    }
+    int siblings = matrix->checkSiblings(frontNodeIt->second);
+    CMatrix::Node coor[8] = {
+        CMatrix::Node(frontNodeIt->second.x - 1, frontNodeIt->second.y - 1),
+        CMatrix::Node(frontNodeIt->second.x,     frontNodeIt->second.y - 1),
+        CMatrix::Node(frontNodeIt->second.x + 1, frontNodeIt->second.y - 1),
+        CMatrix::Node(frontNodeIt->second.x - 1, frontNodeIt->second.y),
+        CMatrix::Node(frontNodeIt->second.x + 1, frontNodeIt->second.y),
+        CMatrix::Node(frontNodeIt->second.x - 1, frontNodeIt->second.y + 1),
+        CMatrix::Node(frontNodeIt->second.x,     frontNodeIt->second.y + 1),
+        CMatrix::Node(frontNodeIt->second.x + 1, frontNodeIt->second.y + 1),
+    };
+    for (int i = 0; siblings; siblings = siblings >> 1, i++)
+    {
+        if ((siblings & 0x1) && (!searchMap(coor[i])) && (std::find(closed.begin(), closed.end(), coor[i]) == closed.end()))
+        {
+            auto n = CMatrix::Node(coor[i], frontNodeIt->second.y * matrix->width + frontNodeIt->second.x);
+            int g = frontNodeIt->second.y + 1;
+            int h = heuristic(n);
+            int f = g + h;
+            open.emplace(f, n);
+        }
+    }
+    open.erase(frontNodeIt);
+    if (open.empty())
+        end(false);
+}
+
+void CSearchAStar::begin(const CMatrix::Node& a, const CMatrix::Node& b)
+{
+    target = b;
+    open.emplace(heuristic(a), CMatrix::Node(a, -1));
+}
+
+void CSearchAStar::end(bool s)
 {
     if (s)
     {

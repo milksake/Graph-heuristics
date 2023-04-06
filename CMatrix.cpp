@@ -134,7 +134,7 @@ void CMatrix::eraseRange(Node a, Node b)
 float CMatrix::eucliDistance(Node a, Node b)
 {
     auto n = a - b;
-    return std::pow(n.x, 2) + std::pow(n.y, 2);
+    return std::sqrt(std::pow(n.x, 2) + std::pow(n.y, 2));
 }
 /*
 template<typename T>

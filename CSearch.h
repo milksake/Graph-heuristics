@@ -80,3 +80,25 @@ public:
 	virtual void begin(const CMatrix::Node& a, const CMatrix::Node& b) override;
 	virtual void end(bool s) override;
 };
+
+class CSearchAStar : public CSearch
+{
+protected:
+	std::multimap<int, CMatrix::Node> open;
+	std::vector<CMatrix::Node> closed;
+	std::vector<CMatrix::Node> path;
+
+	virtual float heuristic(CMatrix::Node x);
+	bool searchMap(CMatrix::Node n);
+
+public:
+	CSearchAStar(const CMatrix::Node& a, const CMatrix::Node b, CMatrix* matrix);
+
+	// Inherited via CSearch
+	virtual std::vector<CMatrix::Node>& nFound() override;
+	virtual std::vector<CMatrix::Node>& nDisplay() override;
+
+	virtual void update() override;
+	virtual void begin(const CMatrix::Node& a, const CMatrix::Node& b) override;
+	virtual void end(bool s) override;
+};
