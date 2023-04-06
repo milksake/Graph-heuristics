@@ -17,6 +17,8 @@ class COpenGL
 	void draw(const CMatrix& matrix);
 
 public:
+	std::vector<CMatrix::Node> obstacles;
+	CMatrix::Node obstacle;
 	void convertToGLCoor(double& x, double& y);
 	CMatrix::Node getNodePosition(float x, float y);
 

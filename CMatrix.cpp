@@ -6,7 +6,7 @@
 #include "CSearch.h"
 
 CMatrix::CMatrix(int width, int height):
-    width(width), height(height), obstacle(-1, -1, -1)
+    width(width), height(height)
 {
     init();
 }

@@ -41,7 +41,6 @@ public:
 	void eraseRange(Node a, Node b);
 
 	std::vector<Node> selected_nodes;
-	Node obstacle;
 
 	void update();
 
