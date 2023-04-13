@@ -279,7 +279,7 @@ void CSearchAStar::update()
         if ((siblings & 0x1) && (!searchMap(coor[i])) && (std::find(closed.begin(), closed.end(), coor[i]) == closed.end()))
         {
             auto n = CMatrix::Node(coor[i], frontNodeIt->second.y * matrix->width + frontNodeIt->second.x);
-            int g = frontNodeIt->second.y + 1;
+            int g = matrix->eucliDistance(frontNodeIt->second, n);
             int h = heuristic(n);
             int f = g + h;
             open.emplace(f, n);
