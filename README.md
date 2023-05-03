@@ -1,6 +1,6 @@
 ### A* and BestFirst algorithms
 
-The present repository uses OPENgl to solve the traveling agent problem using genetic algorithms.
+The present repository uses OpenGL to run the A* and BestFirst algorithms.
 
 To run the code you need an IDE with the necessary tools to compile OpenGL.
 
